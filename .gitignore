@@ -1,4 +1,5 @@
 **/.venv
-**/.env
 data/
+**/.env
+**/__pycache__/
 inference/.env
