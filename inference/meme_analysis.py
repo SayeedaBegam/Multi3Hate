@@ -70,8 +70,8 @@ def analyze_image(image_path: Path, caption: str, category: str) -> dict[str,str
         composite = f"{category}.{prompt_key}"
         system_prompt = pm.get(
             composite,
-            country="India",
-            dialect="Tamilian",
+            country="China",
+            dialect="Chinese",
             persona="a social activist",
         )
 
