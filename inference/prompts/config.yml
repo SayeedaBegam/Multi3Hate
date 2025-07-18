@@ -1,6 +1,0 @@
-prompts:
-  # Tier 1: Core Cultural Understanding
-  general:
-    template: CoreCulturalUnderstanding/general.jinja2
-    defaults:
-      country: null
