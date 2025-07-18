@@ -1,0 +1,84 @@
+prompts:
+  # Tier 1: Core Cultural Understanding
+  general:
+    template: CoreCulturalUnderstanding/general.jinja2
+    defaults:
+      country: null
+  india:
+    template: CoreCulturalUnderstanding/india.jinja2
+    defaults: {}
+  china:
+    template: CoreCulturalUnderstanding/china.jinja2
+    defaults: {}
+  regionalInterpretation:
+    template: CoreCulturalUnderstanding/regionalInterpretation.jinja2
+    defaults:
+      country: null
+  humorType:
+    template: CoreCulturalUnderstanding/humorType.jinja2
+    defaults: {}
+
+  # Tier 2: Sensitivity & Moderation
+  tabooDetection:
+    template: SensitivityModeration/tabooDetection.jinja2
+    defaults:
+      country: null
+  censorshipPrediction:
+    template: SensitivityModeration/censorshipPrediction.jinja2
+    defaults:
+      country: null
+  moderationThreshold:
+    template: SensitivityModeration/moderationThreshold.jinja2
+    defaults:
+      country: null
+  communitySentiment:
+    template: SensitivityModeration/communitySentiment.jinja2
+    defaults:
+      country: null
+
+  # Tier 3: Regional & Linguistic Adaptation
+  iconography:
+    template: RegionalLinguisticAdaptation/iconography.jinja2
+    defaults: {}
+  dialectRendering:
+    template: RegionalLinguisticAdaptation/dialectRendering.jinja2
+    defaults:
+      dialect: null
+  formatAppropriateness:
+    template: RegionalLinguisticAdaptation/formatAppropriateness.jinja2
+    defaults:
+      country: null
+  localizationSuggestion:
+    template: RegionalLinguisticAdaptation/localizationSuggestion.jinja2
+    defaults:
+      country: null
+
+  # Tier 4: Humor & Viral Dynamics
+  politicalAlignment:
+    template: HumorViralDynamics/politicalAlignment.jinja2
+    defaults:
+      country: null
+  formatFit:
+    template: HumorViralDynamics/formatFit.jinja2
+    defaults:
+      country: null
+  emotionalImpact:
+    template: HumorViralDynamics/emotionalImpact.jinja2
+    defaults: {}
+  crossCulturalRisk:
+    template: HumorViralDynamics/crossCulturalRisk.jinja2
+    defaults:
+      country: null
+
+  # Tier 5: Advanced Insight & Empathy
+  audienceAppropriateness:
+    template: AdvancedInsightEmpathy/audienceAppropriateness.jinja2
+    defaults: {}
+  biasMitigation:
+    template: AdvancedInsightEmpathy/biasMitigation.jinja2
+    defaults:
+      persona: null
+  politicalAlignmentAdvanced:
+    template: AdvancedInsightEmpathy/politicalAlignment.jinja2
+    defaults:
+      country: null
