@@ -1,7 +1,7 @@
-import os
-import yaml
 import csv
+import yaml
 from pathlib import Path
+
 from prompt_manager import PromptManager
 from llm_inference_service import (
     AsyncOpenAIClientAdapter,
@@ -11,97 +11,121 @@ from llm_inference_service import (
 )
 from message_utils import prepare_multimodal_message
 
-# Paths
-prompts_dir = Path(__file__).parent / "prompts"
-cfg_path    = prompts_dir / "config.yaml"
+# ——— CONFIG ————————————————————————————————————————————————————————————
+BASE_DIR     = Path(__file__).parent
+DATA_ROOT    = BASE_DIR.parent / "data"
+MEMES_ROOT   = DATA_ROOT / "memes"
+CAPTIONS_CSV = DATA_ROOT / "captions" / "en.csv"       # change language file as needed
+LANG         = CAPTIONS_CSV.stem                       # e.g. "en"
+PROMPTS_DIR  = BASE_DIR / "prompts"
+CFG_PATH     = PROMPTS_DIR / "config.yaml"
+OUTPUT_CSV   = BASE_DIR / "llm_responses.csv"
+# ——————————————————————————————————————————————————————————————————————
 
-# Initialize
-prompt_manager = PromptManager(str(prompts_dir), str(cfg_path))
-sync_adapter   = OpenAIClientAdapter()
-async_adapter  = AsyncOpenAIClientAdapter()
-service        = LLMInferenceService(sync_adapter, async_adapter)
+# Initialize services
+pm      = PromptManager(str(PROMPTS_DIR), str(CFG_PATH))
+service = LLMInferenceService(OpenAIClientAdapter(), AsyncOpenAIClientAdapter())
 
-def generate_image_id(image_path: str) -> str:
-    p = Path(image_path)
-    folder    = p.parents[2].name
-    subfolder = p.parents[1].name
-    stem      = p.stem
-    return f"{folder}-{subfolder}-{stem}"
+def load_captions(captions_file: Path) -> dict[str, str]:
+    caps = {}
+    with captions_file.open(newline="", encoding="utf-8") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            if len(row) < 3:
+                continue
+            img_num, group, caption = row[0].strip(), row[1].strip(), row[2].strip()
+            image_id = f"{LANG}-{group}-{img_num}"
+            caps[image_id] = caption
+    return caps
 
-def analyze_meme_category(
-    image_path: str,
-    caption:    str,
-    category:   str,
-    country:    str = "India",
-    dialect:    str = "Tamilian",
-    persona:    str = "a social activist",
-) -> dict:
-    """
-    Run **all** prompts under `category`, returning a mapping
-    of prompt_key -> LLM response text.
-    """
-    # 1) Load raw YAML so we know which sub-keys exist under the category
-    with open(cfg_path, "r", encoding="utf-8") as f:
-        full_cfg = yaml.safe_load(f)
+def pick_one_per_group(memes_root: Path, lang: str=LANG) -> list[Path]:
+    picks = []
+    base = memes_root / lang
+    if not base.exists():
+        return picks
+    for group_dir in sorted(base.iterdir()):
+        if not group_dir.is_dir():
+            continue
+        for img in sorted(group_dir.iterdir()):
+            if img.suffix.lower() in (".jpg", ".png"):
+                picks.append(img)
+                break
+    return picks
 
-    if category not in full_cfg["prompts"]:
-        raise KeyError(f"Category '{category}' not found in config.yaml")
+def generate_image_id(image_path: Path) -> str:
+    parts = list(image_path.parts)
+    try:
+        idx = parts.index("memes")
+        lang, group = parts[idx+1], parts[idx+2]
+    except ValueError:
+        lang, group = parts[-3], parts[-2]
+    return f"{lang}-{group}-{image_path.stem}"
 
-    subprompts = full_cfg["prompts"][category].keys()
-
-    results = {}
-    for prompt_key in subprompts:
-        # 2) Build the system prompt for this sub-prompt
-        composite_key = f"{category}.{prompt_key}"
-        system_prompt = prompt_manager.get(
-            composite_key,
-            country=country,
-            dialect=dialect,
-            persona=persona,
+def analyze_image(image_path: Path, caption: str, category: str) -> dict[str,str]:
+    cfg = yaml.safe_load(CFG_PATH.read_text())
+    if category not in cfg["prompts"]:
+        raise KeyError(f"Category {category!r} not in config")
+    out = {}
+    for prompt_key in cfg["prompts"][category]:
+        composite = f"{category}.{prompt_key}"
+        system_prompt = pm.get(
+            composite,
+            country="India",
+            dialect="Tamilian",
+            persona="a social activist",
         )
-        
 
+        # <-- FIXED: use keyword args here
         system_msg = prepare_multimodal_message(
             role="system",
             blocks=[{"text": system_prompt}],
         )
         user_msg = prepare_multimodal_message(
             role="user",
-            blocks=[{"text": caption}, {"image_path": image_path}],
+            blocks=[
+                {"text": caption},
+                {"image_path": str(image_path)}
+            ],
         )
-        combined = [system_msg, user_msg]
 
-        # 3) Call the LLM
-        model_enum   = AllowedModelId.GPT_4O
-        llm_out      = service.get_responses([model_enum], messages=combined)
-        results[prompt_key] = llm_out[model_enum].content
+        resp = service.get_responses(
+            [AllowedModelId.GPT_4O],
+            messages=[system_msg, user_msg]
+        )
+        out[prompt_key] = resp[AllowedModelId.GPT_4O].content
 
-    return results
+    return out
+
+def main():
+    captions   = load_captions(CAPTIONS_CSV)
+    images     = pick_one_per_group(MEMES_ROOT, LANG)
+    cfg        = yaml.safe_load(CFG_PATH.read_text())
+    categories = list(cfg["prompts"].keys())
+
+    first = not OUTPUT_CSV.exists()
+    with OUTPUT_CSV.open("a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        if first:
+            writer.writerow(["ImageID","ModelID","Category","PromptID","Response"])
+
+        for img in images:
+            image_id = generate_image_id(img)
+            caption  = captions.get(image_id, "<NO CAPTION>")
+            model_id = AllowedModelId.GPT_4O.value
+
+            for category in categories:
+                responses = analyze_image(img, caption, category)
+                for prompt_key, text in responses.items():
+                    writer.writerow([
+                        image_id,
+                        model_id,
+                        category,
+                        prompt_key,
+                        text
+                    ])
+
+    total = len(images) * len(categories)
+    print(f"Done! Wrote ~{total} rows to {OUTPUT_CSV}")
 
 if __name__ == "__main__":
-    image_path = r"C:\Users\sayee\UTN_Projects\Multi3Hate\data\memes\hi\American-Pride-Eagle\8.jpg"
-    caption    = "I find lack of energy in this mail group <sep> very disturbing"
-    category   = "CoreCulturalUnderstanding"   # <-- your category name here
-
-    # 1) Analyze under each sub-prompt
-    responses_by_key = analyze_meme_category(image_path, caption, category)
-
-    # 2) Write each to CSV
-    csv_path = "llm_responses.csv"
-    file_exists = os.path.isfile(csv_path)
-    header = ["ImageID", "ModelID", "PromptID", "Response"]
-
-    with open(csv_path, mode="a", encoding="utf-8", newline="") as f:
-        writer = csv.writer(f)
-        if not file_exists:
-            writer.writerow(header)
-
-        image_id = generate_image_id(image_path)
-        model_id = AllowedModelId.GPT_4O.value
-
-        for prompt_key, response_text in responses_by_key.items():
-            # Build a distinct PromptID: category.prompt_key
-            prompt_id = f"{category}.{prompt_key}"
-            writer.writerow([image_id, model_id, prompt_id, response_text])
-
-    print(f"Saved {len(responses_by_key)} rows to {csv_path}")
+    main()
