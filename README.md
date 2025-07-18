@@ -6,9 +6,9 @@ An end-to-end toolkit for evaluating hate-speech classification of memes using m
 - **Culture-aware** prompts (Indian-centric, China-centric)  
 - **Bias analysis** between perspectives  
 - Metric computation (accuracy, precision, recall, F1)  
-- Visualization (bar charts, confusion matrices)  
+- Visualization (bar charts, confusion matrices)
 
-This project builds on the methods and data described in [Your Paper Title Here] and includes the full dataset and code used for experiments.
+This project builds on the methods and data described in *[Your Paper Title Here]* and includes the full dataset and code used for experiments.
 
 ---
 
@@ -18,102 +18,109 @@ This project builds on the methods and data described in [Your Paper Title Here]
 Multi3Hate/
 ├── data/                          
 │   ├── memes/                     
-│   │   └── en/…      ← all your meme images
-│   └── captions/     ← your CSV captions (e.g. en.csv)
-├── inference/       ← your core multimodal LLM pipeline
+│   │   └── en/…             ← all your meme images
+│   └── captions/           ← your CSV captions (e.g. en.csv)
+├── inference/             ← your core multimodal LLM pipeline
 │   ├── llm_inference_service.py
 │   ├── prompt_manager.py
 │   ├── message_utils.py
 │   └── meme_analysis.py
-├── results/         ← where raw LLM outputs land
-│   ├── llm_responses_C​N.csv
+├── results/               ← where raw LLM outputs land
+│   ├── llm_responses_CN.csv
 │   └── llm_responses_IN.csv
-└── evaluation/      ← all your evaluation scripts & outputs
+└── evaluation/            ← all your evaluation scripts & outputs
     ├── evaluate_hate_accuracy.py
     ├── compare_prompts.py
     ├── evaluation_relevance.py
     ├── evaluation_CN/  
     │   └── evaluate_bias.py
     └── evaluation_IN/
+```
+
+---
 
 ## Quick Start
 
-1. **Install dependencies**  
-   ```bash
-   python -m venv .venv
-   # Windows
-   .venv\Scripts\activate
-   # macOS/Linux
-   source .venv/bin/activate
+### 1. Install dependencies
+```bash
+python -m venv .venv
+# Windows
+.venv\Scripts\activate
+# macOS/Linux
+source .venv/bin/activate
 
-   pip install -r requirements.txt
+pip install -r requirements.txt
+```
 
-2. **Download or clone this repo**  
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/Multi3Hate.git
-   cd Multi3Hate
+### 2. Download or clone this repo
+```bash
+git clone https://github.com/YOUR_USERNAME/Multi3Hate.git
+cd Multi3Hate
+```
 
-3. **Prepare the dataset**  
-   All meme images and captions live under `data/`.  
-   You can use the provided dataset directly—no extra downloads required.
+### 3. Prepare the dataset
+All meme images and captions live under `data/`.  
+You can use the provided dataset directly—no extra downloads required.
 
-4. **Run inference**  
-   Generate multimodal LLM responses:  
-   ```bash
-   python inference/classify_memes_hate.py
+### 4. Run inference
+```bash
+python inference/classify_memes_hate.py
+```
+Outputs → `results/llm_responses.csv`
 
-Outputs → results/llm_responses.csv
-
-5. **Evaluate hate-speech classification**
-
+### 5. Evaluate hate-speech classification
 ```bash
 python evaluation/evaluate_hate_accuracy.py
-Merges ground-truth (data/captions/en.csv) with LLM labels
-Computes accuracy, precision, recall, F1
-Saves evaluation/relevance.csv and chart images
+```
+- Merges ground-truth (`data/captions/en.csv`) with LLM labels  
+- Computes accuracy, precision, recall, F1  
+- Saves `evaluation/relevance.csv` and chart images
 
-6. **Compare prompt strategies**
-
+### 6. Compare prompt strategies
 ```bash
 python evaluation/compare_prompts.py
-Compares US-centric vs. culture-aware (Indian- or China-centric) prompts
+```
+- Compares US-centric vs. culture-aware (Indian- or China-centric) prompts  
+- Saves `evaluation/baseline_vs_cultural.csv`
 
-Saves evaluation/baseline_vs_cultural.csv
-
-7. **Bias analysis (US vs. India and China)**
+### 7. Bias analysis (US vs. India and China)
 ```bash
-Aggregates LLM responses per image
-Computes USBiasScore & ChinaBiasScore via LLM
-Saves JSON and evaluation/evaluation_CN/bias_us_china.png plot
+# Run bias analysis (example logic, ensure correct script if available)
+# This is typically embedded within evaluate_bias.py
+```
+- Aggregates LLM responses per image  
+- Computes USBiasScore & ChinaBiasScore via LLM  
+- Saves JSON and `evaluation/evaluation_CN/bias_us_china.png` plot
 
-8. **Category relevance**
+### 8. Category relevance
 ```bash
-Give pie chart for each of the image, stating how much its relevant to that particular category and subprompts
+# This module provides pie charts of category relevance per image
+```
+- Visualizes how relevant each image is to specific categories and subprompts
+
+---
 
 ## Dataset & Paper
-Dataset included: All memes and captions used in
-“Multi3Hate: Extending Hate-Speech Evaluation to Multimodal Memes”
 
+Dataset included: All memes and captions used in  
+**“Multi3Hate: Extending Hate-Speech Evaluation to Multimodal Memes”**
 
-Contributing
-Fork the repo
+---
 
-Create a feature branch
+## Contributing
 
-bash
-Copy
-Edit
-git checkout -b feature/xyz
-Commit your changes
+1. Fork the repo  
+2. Create a feature branch  
+   ```bash
+   git checkout -b feature/xyz
+   ```
+3. Commit your changes  
+   ```bash
+   git commit -m "Add xyz"
+   ```
+4. Push and open a Pull Request  
+   ```bash
+   git push origin feature/xyz
+   ```
 
-bash
-Copy
-Edit
-git commit -m "Add xyz"
-Push & open a Pull Request
-
-bash
-Copy
-Edit
-git push origin feature/xyz
 Please follow PEP-8 style and include docstrings or tests for new code.
