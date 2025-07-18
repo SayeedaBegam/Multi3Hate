@@ -4,34 +4,59 @@ from jinja2 import Environment, FileSystemLoader
 
 class PromptManager:
     def __init__(self, prompts_dir: str, config_path: str):
+        # Initialize Jinja environment
         self.env = Environment(
             loader=FileSystemLoader(prompts_dir),
             trim_blocks=True,
             lstrip_blocks=True
         )
-        self.config = yaml.safe_load(Path(config_path).read_text())['prompts']
+        # Load the full nested prompts tree from config.yaml
+        raw = yaml.safe_load(Path(config_path).read_text())
+        self.config = raw.get('prompts', {})
         self.cache = {}
 
     def get(self, key: str, **overrides) -> str:
-        if key not in self.config:
-            raise KeyError(f"Prompt key '{key}' not found in config.")
-        entry = self.config[key]
-        template_name = entry['template']
+        """
+        Fetch a prompt by a possibly-nested key, e.g. "CategoryName.subprompt",
+        merging in any overrides on top of the template's defaults.
+        """
+        # Walk down the nested dict via the dot-separated key parts
+        parts = key.split('.')
+        node = self.config
+        for part in parts:
+            if not isinstance(node, dict) or part not in node:
+                raise KeyError(f"Prompt key '{key}' not found in config.")
+            node = node[part]
 
+        # At this point, node should be a dict with 'template' and optional 'defaults'
+        try:
+            template_name = node['template']
+        except (TypeError, KeyError):
+            raise KeyError(f"Prompt key '{key}' does not refer to a prompt entry.")
+        defaults = node.get('defaults', {})
+
+        # Cache and load the Jinja template
         template = self.cache.get(key)
         if template is None:
             template = self.env.get_template(template_name)
             self.cache[key] = template
 
-        params = {**entry.get('defaults', {}), **overrides}
-        return template.render(**params)
+        # Merge defaults + overrides and render
+        context = {**defaults, **overrides}
+        return template.render(**context)
 
-# Example usage
+
 if __name__ == '__main__':
-    base_dir = Path(r"C:\Users\sayee\Documents\UTN_Sem2\Deep_learning_for_digital_humanities_and_social_sciences\Project_Multimodality\Code\Multi3Hate\vlm\inference\prompts")
-    cfg = base_dir / 'config.yml'
+    # Adjust these paths to point at your prompts directory and config file
+    base_dir = Path(r"C:\Users\sayee\UTN_Projects\Multi3Hate\inference\prompts")
+    cfg_file = base_dir / 'config.yaml'
 
-    pm = PromptManager(str(base_dir), str(cfg))
-    print(pm.get('general', country='Germany'))
-    # print(pm.get('india'))
-    # print(pm.get('regionalInterpretation', country='Brazil'))
+    pm = PromptManager(str(base_dir), str(cfg_file))
+
+    # Examples of fetching nested prompts:
+    print("=== CoreCulturalUnderstanding.general ===")
+    print(pm.get('CoreCulturalUnderstanding.general', country='India'))
+    print("\n=== SensitivityModeration.tabooDetection ===")
+    print(pm.get('SensitivityModeration.tabooDetection', country='India'))
+    print("\n=== RegionalLinguisticAdaptation.iconography ===")
+    print(pm.get('RegionalLinguisticAdaptation.iconography'))
