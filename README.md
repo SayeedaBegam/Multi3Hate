@@ -7,6 +7,10 @@ An end-to-end toolkit for evaluating hate-speech classification of memes using m
 - **Bias analysis** between perspectives  
 - Metric computation (accuracy, precision, recall, F1)  
 - Visualization (bar charts, confusion matrices)
+- Prompt Relevance Scoring
+
+
+
 
 This project builds on the methods and data described in *[Your Paper Title Here]* and includes the full dataset and code used for experiments.
 
