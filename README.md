@@ -102,9 +102,16 @@ python evaluation/compare_prompts.py
 
 ## Dataset & Paper
 
-Dataset included: All memes and captions used in  
-**“Multi3Hate: Extending Hate-Speech Evaluation to Multimodal Memes”**
-
+Dataset included: All memes and captions used from  
+**“Multi3Hate: Multimodal, Multilingual, and Multicultural Hate Speech Detection with Vision–Language Models”**
+Github link:
+```bash
+https://github.com/MinhDucBui/Multi3Hate
+```
+Git clone: 
+  ```bash
+https://github.com/MinhDucBui/Multi3Hate.git
+```
 ---
 
 ## Contributing
